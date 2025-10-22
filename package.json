@@ -27,7 +27,7 @@
     "react-scripts": "3.4.1"
   },
   "scripts": {
-    "start": "set NODE_OPTIONS=--openssl-legacy-provider && concurrently \"react-scripts start\" \"nodemon ./server/app.js\"",
+    "start": "set NODE_OPTIONS=--openssl-legacy-provider && concurrently \"react-scripts start\" \"node ./server/app.js\"",
     "build": "set NODE_OPTIONS=--openssl-legacy-provider && react-scripts build",
     "test": "react-scripts test",
     "db:seed": "node ./server/seeder",

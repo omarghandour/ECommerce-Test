@@ -14,7 +14,6 @@ Enable crypto payment using MetaMask:
 - Add MetaMask account connection
 - "Today's ETH price" toggle button
 - Show the MetaMask address of the server
-- Update backend API for crypto payment 
 
 ## Detailed documents
 

@@ -1,4 +1,4 @@
-import React, { Fragment, useContext } from "react";
+import React, { Fragment, useContext, useEffect, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import "./style.css";
 
@@ -11,6 +11,86 @@ const Navber = (props) => {
   const location = useLocation();
 
   const { data, dispatch } = useContext(LayoutContext);
+
+  const [walletAddress, setWalletAddress] = useState("");
+  const [hasMetaMask, setHasMetaMask] = useState(false);
+  const [ethPrice, setEthPrice] = useState(null);
+
+  useEffect(() => {
+    const { ethereum } = window;
+    setHasMetaMask(Boolean(ethereum && ethereum.isMetaMask));
+    if (!ethereum) return;
+
+    const handleAccountsChanged = (accounts) => {
+      setWalletAddress(accounts && accounts.length ? accounts[0] : "");
+    };
+
+    ethereum.on && ethereum.on("accountsChanged", handleAccountsChanged);
+
+    ethereum.on && ethereum.on("disconnect", () => setWalletAddress(""));
+    ethereum.on && ethereum.on("chainChanged", () => {
+      // Clear then re-check accounts on chain changes
+      setWalletAddress("");
+      checkAccounts();
+    });
+
+    // Attempt eager connect if already authorized
+    const checkAccounts = async () => {
+      try {
+        const accounts = await ethereum.request({ method: "eth_accounts" });
+        setWalletAddress(accounts && accounts.length ? accounts[0] : "");
+      } catch (_) {
+        setWalletAddress("");
+      }
+    };
+
+    checkAccounts();
+
+    // Also check when the window/tab regains focus or visibility changes
+    const onFocus = () => checkAccounts();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") checkAccounts();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Cleanup
+    return () => {
+      ethereum.removeListener && ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      ethereum.removeListener && ethereum.removeListener("disconnect", () => setWalletAddress(""));
+      ethereum.removeListener && ethereum.removeListener("chainChanged", () => {});
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connectWallet = async () => {
+    if (!hasMetaMask) {
+      alert("MetaMask not found. Please install MetaMask.");
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      setWalletAddress(accounts && accounts.length ? accounts[0] : "");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchEthPrice = async () => {
+    try {
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+      );
+      const json = await res.json();
+      const price = json && json.ethereum && json.ethereum.usd;
+      setEthPrice(price ?? null);
+      if (price != null) alert(`Today's ETH price: $${price}`);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const navberToggleOpen = () =>
     data.navberHamburger
@@ -83,7 +163,25 @@ const Navber = (props) => {
           >
             
           </div>
-          <div className="flex items-right col-span-2 lg:col-span-1 flex justify-end">
+          <div className="flex items-right col-span-2 lg:col-span-1 flex justify-end space-x-2">
+            {/* Crypto: ETH Price */}
+            <button
+              onClick={fetchEthPrice}
+              className="px-3 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800"
+              title="Today's ETH price"
+            >
+              {ethPrice ? `ETH $${ethPrice}` : "Today's ETH Price"}
+            </button>
+            {/* Crypto: Connect Wallet */}
+            <button
+              onClick={connectWallet}
+              className="px-3 py-2 text-sm rounded-lg bg-yellow-100 hover:bg-yellow-200 text-gray-800"
+              title="Connect MetaMask"
+            >
+              {walletAddress
+                ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`
+                : "Connect Wallet"}
+            </button>
             {/*  WishList Page Button */}
             <div
               onClick={(e) => history.push("/wish-list")}

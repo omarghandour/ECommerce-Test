@@ -24,9 +24,21 @@ export const CheckoutComponent = (props) => {
     instance: {},
   });
 
+  const [recipientAddress, setRecipientAddress] = useState("");
+
   useEffect(() => {
     fetchData(cartListProduct, dispatch);
     fetchbrainTree(getBrainTreeToken, setState);
+
+    // Fetch recipient ETH address from backend
+    (async () => {
+      try {
+        const base = apiURL || "";
+        const res = await fetch(`${base}/api/crypto/address`);
+        const json = await res.json();
+        if (json && json.success) setRecipientAddress(json.address);
+      } catch (_) {}
+    })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -68,6 +80,11 @@ export const CheckoutComponent = (props) => {
                   onBlur={(e) => setState({ ...state, error: false })}
                   className="p-4 md:p-8"
                 >
+                  {/* Crypto payment info */}
+                  <div className="mb-4 p-3 border rounded bg-gray-50 text-sm text-gray-800">
+                    <div className="font-semibold mb-1">Send ETH to this address</div>
+                    <div className="break-all">{recipientAddress || "Not available"}</div>
+                  </div>
                   {state.error ? (
                     <div className="bg-red-200 py-2 px-4 rounded">
                       {state.error}

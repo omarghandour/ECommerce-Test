@@ -32,6 +32,7 @@ const brainTreeRouter = require("./routes/braintree");
 const orderRouter = require("./routes/orders");
 const usersRouter = require("./routes/users");
 const customizeRouter = require("./routes/customize");
+const cryptoRouter = require("./routes/crypto");
 // Import Auth middleware for check user login or not~
 const { loginCheck } = require("./middleware/auth");
 const CreateAllFolder = require("./config/uploadFolderCreateScript");
@@ -40,18 +41,21 @@ const CreateAllFolder = require("./config/uploadFolderCreateScript");
 CreateAllFolder();
 
 // Database Connection
+console.log(process.env.DATABASE);
+
 mongoose
   .connect(process.env.DATABASE, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
+    serverSelectionTimeoutMS: 5000,
   })
   .then(() =>
     console.log(
       "==============Mongodb Database Connected Successfully=============="
     )
   )
-  .catch((err) => console.log("Database Not Connected !!!"));
+  .catch((err) => console.log("Database Not Connected !!!", err));
 
 // Middleware
 app.use(morgan("dev"));
@@ -69,6 +73,7 @@ app.use("/api/product", productRouter);
 app.use("/api", brainTreeRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/customize", customizeRouter);
+app.use("/api", cryptoRouter);
 
 // Run Server
 const PORT = process.env.PORT || 8000;
